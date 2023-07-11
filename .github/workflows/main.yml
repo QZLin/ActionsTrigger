@@ -29,7 +29,7 @@ jobs:
       - name: Execute Script
         run: |
           #pwsh
-          ./init.ps1
+          . ./init.ps1
           python3 main.py
 
       - name: Clean secret
