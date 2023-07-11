@@ -25,7 +25,9 @@ jobs:
           touch $cfg
           echo "this_repo='${{ github.repository }}'" >> $cfg
           echo "token='${{ secrets.PersonalToken }}'" >> $cfg
-
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
       - name: Execute Script
         run: |
           #pwsh
