@@ -24,7 +24,7 @@ jobs:
           $cfg="secret/config.py"
           touch $cfg
           echo "this_repo='${{ github.repository }}'" >> $cfg
-          echo "token='${{ secrets.PersonalToken }}'" >> $cfg
+          echo "token='${{ secrets.PERSONALTOKEN }}'" >> $cfg
       - uses: actions/setup-python@v4
         with:
           python-version: '3.11'
