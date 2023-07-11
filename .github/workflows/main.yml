@@ -1,0 +1,36 @@
+name: CI
+permissions: write-all
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  workflow_dispatch:
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Init secret
+        run: |
+          #pwsh
+          $cfg="secret/config.py"
+          touch $cfg
+          echo "this_repo='${{ github.repository }}'" >> $cfg
+          echo "token='${{ secrets.PersonalToken }}'" >> $cfg
+
+      - name: Execute Script
+        run: |
+          #pwsh
+          . init.ps1
+          python3 main.py
+
+      - name: Clean secret
+        run: rm secret/config.py
