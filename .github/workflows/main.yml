@@ -2,10 +2,13 @@ name: CI
 permissions: write-all
 
 on:
+  schedule:
+    - cron: 0,30 * * * *
+
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
   workflow_dispatch:
 
@@ -27,7 +30,7 @@ jobs:
           echo "token='${{ secrets.PERSONALTOKEN }}'" >> $cfg
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
       - name: Execute Script
         run: |
           #pwsh

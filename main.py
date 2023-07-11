@@ -3,9 +3,8 @@ import os
 
 import yaml
 
-from script import BasicCondition
-from utils import *
 from rest_api import *
+from utils import *
 
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
