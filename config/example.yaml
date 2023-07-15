@@ -7,8 +7,8 @@ ea90abd1630841e0ac07ab81ad99ad52:
   action:
     name: workflow_dispatch
     repo: qzlin/forward2
-    branch: main
-    id: update.yml
+    branch: sync
+    id: sync.yml
 
 coredns_extract:
   type: simple
