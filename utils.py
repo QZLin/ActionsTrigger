@@ -8,6 +8,9 @@ class ResultData:
 
 
 class AttrDict(dict):
+    def __init__(self, **kwargs):
+        super().__init__(kwargs)
+
     @staticmethod
     def from_dict(v: dict) -> 'AttrDict':
         r = AttrDict()

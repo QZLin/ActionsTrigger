@@ -16,7 +16,8 @@ def simple_handler(id_, args):
     this_repo_values = values()
     v = [x for x in this_repo_values if x['name'] == id_]
     if len(v) == 1:
-        unit_data = json.loads(v[0]['value'])
+        v_content = v[0]['value']
+        unit_data = json.loads(v_content) if v_content != 'null' else {}
     else:
         create_value(id_)
         unit_data = {}
