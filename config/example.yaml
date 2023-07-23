@@ -1,23 +1,34 @@
-ea90abd1630841e0ac07ab81ad99ad52:
-  type: simple
-  condition:
-    repo: qzlin/forward
-    branch: main
-    name: simple_new_commit
-  action:
-    name: workflow_dispatch
-    repo: qzlin/forward2
-    branch: sync
-    id: sync.yml
+#ea90abd1630841e0ac07ab81ad99ad52:
+#  type: simple
+#  condition:
+#    repo: qzlin/forward
+#    branch: main
+#    name: simple_new_commit
+#  action:
+#    name: workflow_dispatch
+#    repo: qzlin/forward2
+#    branch: sync
+#    id: sync.yml
 
-coredns_extract:
-  type: simple
-  condition:
-    repo: coredns/coredns
-    branch: master
-    name: simple_new_commit
-  action:
-    name: workflow_dispatch
-    repo: QZLin/coredns-extract
-    branch: main
-    id: sync.yaml
+#coredns_extract:
+#  type: simple
+#  condition:
+#    repo: coredns/coredns
+#    branch: master
+#    name: simple_new_commit
+#  action:
+#    name: workflow_dispatch
+#    repo: QZLin/coredns-extract
+#    branch: main
+#    id: sync.yaml
+
+#minitouch_build:
+#  type: simple
+#  condition:
+#    name: simple_new_tag
+#    repo: DeviceFarmer/minitouch
+#  action:
+#    name: workflow_dispatch
+#    repo: QZLin/minitouch
+#    branch: main
+#    id: main.yml

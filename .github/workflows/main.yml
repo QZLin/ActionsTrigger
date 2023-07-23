@@ -6,9 +6,9 @@ on:
     - cron: 0,30 * * * *
 
   push:
-    branches: ["main"]
+    branches: [ "main" ]
   pull_request:
-    branches: ["main"]
+    branches: [ "main" ]
 
   workflow_dispatch:
 
@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Init secret
+      - name: Init Secret
         run: |
           #pwsh
           $cfg="secret/config.py"
@@ -35,7 +35,8 @@ jobs:
         run: |
           #pwsh
           . ./init.ps1
+          python3 remote_config.py "${{ github.repository }}"
           python3 main.py
 
-      - name: Clean secret
+      - name: Clean Secret
         run: rm secret/config.py

@@ -23,6 +23,13 @@ def create_value(name):
     return create_repo_value(this_repo, name)
 
 
+def assert200(r: requests.Response):
+    if r.status_code != 200:
+        logging.error(r.content)
+        return True
+    return False
+
+
 # https://docs.github.com/rest/actions/variables?apiVersion=2022-11-28#list-repository-variables
 def repo_value(repo, name):
     r = requests.get(f'{API}/repos/{repo}/actions/variables/{name}', headers=headers)
@@ -51,7 +58,7 @@ def update_repo_value(repo, name, value):
 
 # https://docs.github.com/rest/releases/releases?apiVersion=2022-11-28#list-releases
 def list_releases(repo):
-    r = requests.get(f'{API}/repos/{repo}/releases')
+    r = requests.get(f'{API}/repos/{repo}/releases', headers=headers)
     if r.status_code != 200:
         logging.error(r.content)
         return None
@@ -60,8 +67,16 @@ def list_releases(repo):
     return json_data
 
 
+def get_release_by_tag(repo, tag):
+    r = requests.get(f'{API}/repos/{repo}/releases/tags/{tag}', headers=headers)
+    if assert200(r):
+        return
+    json_data = json.loads(r.content)
+    return json_data
+
+
 def list_tags(repo):
-    r = requests.get(f'{API}/repos/{repo}/tags')
+    r = requests.get(f'{API}/repos/{repo}/tags', headers=headers)
     # assert r.status_code == 200, r.content
     if r.status_code != 200:
         logging.error(r.content)

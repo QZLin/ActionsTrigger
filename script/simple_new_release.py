@@ -23,6 +23,7 @@ def handle(args):
             break
     if latest is None:
         logging.warning(f'no release was found for {args.repo}#pre:{bool(args.allow_prerelease)}')
+    print(latest)
     if latest is not None and args.last_tag != latest['tag_name']:
         print(latest['tag_name'])
         print('true')
