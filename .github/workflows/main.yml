@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Init Secret
         run: |
-          #pwsh
+          #!/usr/bin/pwsh
           $cfg="secret/config.py"
           touch $cfg
           echo "this_repo='${{ github.repository }}'" >> $cfg
@@ -31,10 +31,13 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
+      - name: Init Python Env
+        run: |
+          #!/usr/bin/pwsh
+          . ./init.ps1
       - name: Execute Script
         run: |
-          #pwsh
-          . ./init.ps1
+          #!/usr/bin/pwsh
           python3 remote_config.py "${{ github.repository }}"
           python3 main.py
 
