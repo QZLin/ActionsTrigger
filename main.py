@@ -53,6 +53,8 @@ def main():
         logging.info(path_)
         with open(path_) as f:
             data = yaml.load(f, Loader)
+        if data is None:
+            continue
         for id_, args in data.items():
             id_ = id_.upper()
             logging.info(f'{id_}#{args["type"]}')

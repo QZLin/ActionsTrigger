@@ -1,3 +1,11 @@
+example_unit:
+  type: simple
+  condition:
+    name: BasicAction
+  action:
+    name: echo
+    content: ::notice::Hello, world!
+
 #ea90abd1630841e0ac07ab81ad99ad52:
 #  type: simple
 #  condition:
