@@ -12,35 +12,41 @@ except ImportError:
     from yaml import Loader, Dumper
 
 
-def simple_handler(id_, args):
-    this_repo_values = values()
-    v = [x for x in this_repo_values if x['name'] == id_]
+def unit_data(unit_id, actions_values=None) -> dict:
+    if actions_values is None:
+        actions_values = values()
+    v = [x for x in actions_values if x['name'] == unit_id]
     if len(v) == 1:
         v_content = v[0]['value']
-        unit_data = json.loads(v_content) if v_content != 'null' else {}
+        return json.loads(v_content) if v_content != 'null' else {}
     else:
-        create_value(id_)
-        unit_data = {}
+        create_value(unit_id)
+        return {}
+
+
+def simple_handler(id_, args):
+    data = unit_data(id_)
 
     to_update = {}
     cond_module = importlib.import_module(f'script.{args["condition"]["name"]}')
-    merged_data = unit_data.copy()
+    merged_data = data.copy()
     merged_data.update(args['condition'])
     r: ResultData = cond_module.handle(merged_data)
     to_update.update(r.data)
 
     if r.result:
         action_module = importlib.import_module(f'script.{args["action"]["name"]}')
-        merged_data = unit_data.copy()
+        merged_data = data.copy()
         merged_data.update(args['action'])
         r2 = action_module.handle(merged_data)
-        to_update.update(r2.data)
+        if r2:
+            to_update.update(r2.data)
     else:
         logging.info('condition not reached')
-    new_unit_data = unit_data.copy()
-    new_unit_data.update(to_update)
-    if unit_data != new_unit_data:
-        new_value = json.dumps(new_unit_data)
+    new_data = data.copy()
+    new_data.update(to_update)
+    if data != new_data:
+        new_value = json.dumps(new_data)
         logging.info(new_value)
         update_values(id_, new_value)
     else:
