@@ -42,7 +42,7 @@ def simple_handler(id_, args):
         if r2:
             to_update.update(r2.data)
     else:
-        logging.info('condition not reached')
+        StdCmd.notice('condition not reached')
     new_data = data.copy()
     new_data.update(to_update)
     if data != new_data:
@@ -55,17 +55,22 @@ def simple_handler(id_, args):
 
 def main():
     for x in next(os.walk('config'))[2]:
-        path_ = f'config/{x}'
-        logging.info(path_)
-        with open(path_) as f:
+        conf_path = f'config/{x}'
+        logging.info(conf_path)
+        StdCmd.notice(conf_path)
+        with open(conf_path) as f:
             data = yaml.load(f, Loader)
         if data is None:
+            StdCmd.warning('Empty conf')
             continue
         for id_, args in data.items():
             id_ = id_.upper()
             logging.info(f'{id_}#{args["type"]}')
+            assert args['type'],'args must have type'
             if args['type'] == 'simple':
                 simple_handler(id_, args)
+            else:
+                logging.error(f'Unimplement handler {args['type']}')
 
 
 if __name__ == '__main__':

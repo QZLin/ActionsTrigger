@@ -25,7 +25,7 @@ class AttrDict(dict):
 
 
 RData = ResultData
-if __name__ == '__main__':
-    a = AttrDict()
-    a.test = 1
-    print(a, a.test)
+# if __name__ == '__main__':
+#     a = AttrDict()
+#     a.test = 1
+#     print(a, a.test)
