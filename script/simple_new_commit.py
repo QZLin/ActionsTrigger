@@ -11,6 +11,8 @@ from utils import RData, AttrDict
 def handle(data):
     logging.info(__name__)
     data = AttrDict.from_dict(data)
+    assert data.repo
+    assert data.branch
     r = requests.get(f'https://api.github.com/repos/{data.repo}/branches',
                      headers=headers)
     r_data = json.loads(r.content)

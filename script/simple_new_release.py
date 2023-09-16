@@ -11,6 +11,7 @@ from utils import RData, AttrDict
 def handle(args):
     logging.debug(args)
     args = AttrDict.from_dict(args)
+    assert args.repo
 
     releases = list_releases(args.repo)
     latest = None

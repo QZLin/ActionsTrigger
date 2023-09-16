@@ -31,16 +31,17 @@ def simple_handler(id_, args):
     cond_module = importlib.import_module(f'script.{args["condition"]["name"]}')
     merged_data = data.copy()
     merged_data.update(args['condition'])
-    r: ResultData = cond_module.handle(merged_data)
-    to_update.update(r.data)
+    r1: ResultData = cond_module.handle(merged_data)
+    to_update.update(r1.data)
 
-    if r.result:
+    if r1.result:
         action_module = importlib.import_module(f'script.{args["action"]["name"]}')
         merged_data = data.copy()
         merged_data.update(args['action'])
         r2 = action_module.handle(merged_data)
         if r2:
             to_update.update(r2.data)
+        StdCmd.notice(f'#{id_} executed')
     else:
         StdCmd.notice(f'#{id_} condition not reached')
     new_data = data.copy()
