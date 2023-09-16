@@ -42,7 +42,7 @@ def simple_handler(id_, args):
         if r2:
             to_update.update(r2.data)
     else:
-        StdCmd.notice(f'#{id_}condition not reached')
+        StdCmd.notice(f'#{id_} condition not reached')
     new_data = data.copy()
     new_data.update(to_update)
     if data != new_data:
