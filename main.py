@@ -41,9 +41,9 @@ def simple_handler(id_, args):
         r2 = action_module.handle(merged_data)
         if r2:
             to_update.update(r2.data)
-        StdCmd.notice(f'#{id_} executed')
+        StdCommand.notice(f'#{id_} executed')
     else:
-        StdCmd.notice(f'#{id_} condition not reached')
+        StdCommand.notice(f'#{id_} condition not reached')
     new_data = data.copy()
     new_data.update(to_update)
     if data != new_data:
@@ -58,16 +58,16 @@ def main():
     for x in next(os.walk('config'))[2]:
         conf_path = f'config/{x}'
         logging.info(conf_path)
-        StdCmd.notice(conf_path)
+        StdCommand.notice(conf_path)
         with open(conf_path) as f:
             data = yaml.load(f, Loader)
         if data is None:
-            StdCmd.warning('Empty conf')
+            StdCommand.warning('Empty conf')
             continue
         for id_, args in data.items():
             id_ = id_.upper()
             logging.info(f'{id_}#{args["type"]}')
-            assert args['type'],'args must have type'
+            assert args['type'], 'args must have type'
             if args['type'] == 'simple':
                 simple_handler(id_, args)
             else:

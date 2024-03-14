@@ -23,9 +23,9 @@ def create_value(name):
     return create_repo_value(this_repo, name)
 
 
-def assert200(r: requests.Response):
-    if r.status_code != 200:
-        logging.error(r.content)
+def assert200(response: requests.Response):
+    if response.status_code != 200:
+        logging.error(response.content)
         return True
     return False
 
@@ -63,8 +63,7 @@ def update_repo_value(repo, name, value):
 # https://docs.github.com/rest/releases/releases?apiVersion=2022-11-28#list-releases
 def list_releases(repo):
     r = requests.get(f'{API_URL}/repos/{repo}/releases', headers=headers)
-    if r.status_code != 200:
-        logging.error(r.content)
+    if assert200(r):
         return None
     json_data = json.loads(r.content)
     logging.info(f'{repo} has {len(json_data)} releases at least')
@@ -82,30 +81,33 @@ def get_release_by_tag(repo, tag):
 def list_tags(repo):
     r = requests.get(f'{API_URL}/repos/{repo}/tags', headers=headers)
     # assert r.status_code == 200, r.content
-    if r.status_code != 200:
-        logging.error(r.content)
+    if assert200(r):
         return None
     json_data = json.loads(r.content)
     return json_data
 
+
 # https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions
-class StdCmd:
+class StdCommand:
     @staticmethod
-    def simple(name,value):
+    def simple(name, value):
         print(f'::{name}::{value}')
 
     @staticmethod
     def debug(content):
-        StdCmd.simple('debug',content)
-        
+        StdCommand.simple('debug', content)
+
     @staticmethod
     def notice(content):
-        StdCmd.simple('notice',content)    
+        StdCommand.simple('notice', content)
 
     @staticmethod
     def warning(content):
-        StdCmd.simple('warning',content)
+        StdCommand.simple('warning', content)
 
     @staticmethod
     def error(content):
-        StdCmd.simple('error',content)
+        StdCommand.simple('error', content)
+
+
+StdCmd = StdCommand

@@ -26,8 +26,8 @@ jobs:
           #!/usr/bin/pwsh
           $cfg="secret/config.py"
           touch $cfg
-          echo "this_repo='${{ github.repository }}'" >> $cfg
-          echo "token='${{ secrets.PERSONALTOKEN }}'" >> $cfg
+          echo "this_repo=r'${{ github.repository }}'" >> $cfg
+          echo "token=r'${{ secrets.PERSONALTOKEN }}'" >> $cfg
       - uses: actions/setup-python@v4
         with:
           python-version: "3.11"
@@ -42,7 +42,7 @@ jobs:
       - name: Execute Script
         run: |
           #!/usr/bin/pwsh
-          python3 remote_config.py "${{ github.repository }}"
+          python3 fetch_external_config.py "${{ github.repository }}"
           python3 main.py
 
       - name: Clean Secret
