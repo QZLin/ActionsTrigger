@@ -3,8 +3,7 @@ import os
 
 import yaml
 
-from rest_api import *
-from utils import *
+from RestApi import ResultData, create_value, values, json, logging, update_values, StdCommand
 
 try:
     from yaml import CLoader as Loader, CDumper as Dumper

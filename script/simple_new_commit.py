@@ -4,8 +4,7 @@ import logging
 
 import requests
 
-from rest_api import headers
-from utils import RData, AttrDict
+from RestApi import headers, RData, AttrDict
 
 
 def handle(data):

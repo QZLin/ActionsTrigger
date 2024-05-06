@@ -4,8 +4,7 @@ import logging
 
 import requests
 
-from rest_api import headers
-from utils import RData
+from RestApi import headers, RData
 
 
 # https://docs.github.com/rest/actions/workflows#create-a-workflow-dispatch-event

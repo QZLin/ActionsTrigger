@@ -1,4 +1,4 @@
-from utils import ResultData
+from RestApi import ResultData
 
 
 def handle(args: dict) -> ResultData:

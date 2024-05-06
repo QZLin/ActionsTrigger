@@ -1,5 +1,6 @@
 import json
 import logging
+from dataclasses import dataclass, field
 
 import requests
 
@@ -111,3 +112,30 @@ class StdCommand:
 
 
 StdCmd = StdCommand
+
+
+@dataclass
+class ResultData:
+    result: bool
+    data: dict = field(default_factory=dict)
+
+
+class AttrDict(dict):
+    def __init__(self, **kwargs):
+        super().__init__(kwargs)
+
+    @staticmethod
+    def from_dict(v: dict) -> 'AttrDict':
+        r = AttrDict()
+        r.update(v)
+        return r
+
+    def __getattr__(self, item):
+        return self[item] if item in self.keys() else None
+
+    def __setattr__(self, key, value):
+        self[key] = value
+
+
+RData = ResultData
+

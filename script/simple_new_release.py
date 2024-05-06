@@ -4,8 +4,7 @@ import logging
 
 import requests
 
-from rest_api import list_releases
-from utils import RData, AttrDict
+from RestApi import list_releases, RData, AttrDict
 
 
 def handle(args):

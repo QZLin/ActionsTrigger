@@ -4,8 +4,7 @@ import logging
 
 import requests
 
-from rest_api import list_tags
-from utils import RData, AttrDict
+from RestApi import list_tags, RData, AttrDict
 
 
 def handle(args):

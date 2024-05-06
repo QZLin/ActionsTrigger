@@ -2,7 +2,13 @@
 
 Personal actions trigger/ upstream event subscriber
 
+```
 > Structure
+
+|--- main.py <- RestApi
+|--- config
+|   |--- config.yaml
+```
 
 ## Main
 
@@ -11,5 +17,5 @@ Personal actions trigger/ upstream event subscriber
 #### Unit
 
 * id
-* hander
+* handler
 * args

@@ -4,7 +4,7 @@ import os.path
 
 import requests
 
-from rest_api import get_release_by_tag
+from RestApi import get_release_by_tag
 
 
 def download(url, target):
