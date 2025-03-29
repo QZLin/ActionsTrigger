@@ -30,7 +30,7 @@ jobs:
           echo "token=r'${{ secrets.PERSONALTOKEN }}'" >> $cfg
       - uses: actions/setup-python@v5.4.0
         with:
-          python-version: "3.11"
+          python-version: "3.13"
       - name: Init Python Env
         run: |
           #!/usr/bin/pwsh
