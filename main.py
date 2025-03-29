@@ -70,7 +70,7 @@ def main():
             if args['type'] == 'simple':
                 simple_handler(id_, args)
             else:
-                logging.error(f'Unimplement handler {args["type"]}')
+                logging.error(f'Unimplemented handler {args["type"]}')
 
 
 if __name__ == '__main__':
