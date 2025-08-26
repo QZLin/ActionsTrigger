@@ -37,13 +37,17 @@ jobs:
           . ./init.ps1
       - name: Check Env
         run: |
+          #!/usr/bin/pwsh
           pwsh --version
-          python3 --version
+          which uv
+          uv self version
+          uv run python --version
+          uv pip list
       - name: Execute Script
         run: |
           #!/usr/bin/pwsh
-          python3 fetch_external_config.py "${{ github.repository }}"
-          python3 main.py
+          uv run fetch_external_config.py "${{ github.repository }}"
+          uv run main.py
 
       - name: Clean Secret
         run: rm secret/config.py
