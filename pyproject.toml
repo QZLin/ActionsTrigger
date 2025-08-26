@@ -1,0 +1,10 @@
+[project]
+name = "ActionsTrigger"
+version = "0.1.0"
+description = "Github Actions Trigger"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "requests",
+    "pyyaml"
+]
