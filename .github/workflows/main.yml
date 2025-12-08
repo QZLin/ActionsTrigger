@@ -20,7 +20,7 @@ jobs:
         shell: pwsh
 
     steps:
-      - uses: actions/checkout@v6.0.0
+      - uses: actions/checkout@v6.0.1
       - name: Init Secret
         run: |
           #!/usr/bin/pwsh
