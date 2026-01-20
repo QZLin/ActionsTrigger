@@ -12,7 +12,7 @@ headers = {'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '202
            'Authorization': token}
 
 
-def values():
+def get_actions_value():
     return repo_values(this_repo)
 
 
@@ -74,7 +74,7 @@ def list_releases(repo):
 def get_release_by_tag(repo, tag):
     r = requests.get(f'{API_URL}/repos/{repo}/releases/tags/{tag}', headers=headers)
     if assert200(r):
-        return
+        return None
     json_data = json.loads(r.content)
     return json_data
 
@@ -89,35 +89,39 @@ def list_tags(repo):
 
 
 # https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions
-class StdCommand:
+class ActionsCmd:
     @staticmethod
     def simple(name, value):
         print(f'::{name}::{value}')
 
     @staticmethod
+    def info(content):
+        print(content)
+
+    @staticmethod
     def debug(content):
-        StdCommand.simple('debug', content)
+        ActionsCmd.simple('debug', content)
 
     @staticmethod
     def notice(content):
-        StdCommand.simple('notice', content)
+        ActionsCmd.simple('notice', content)
 
     @staticmethod
     def warning(content):
-        StdCommand.simple('warning', content)
+        ActionsCmd.simple('warning', content)
 
     @staticmethod
     def error(content):
-        StdCommand.simple('error', content)
+        ActionsCmd.simple('error', content)
 
 
-StdCmd = StdCommand
+StdCmd = ActionsCmd
 
 
 @dataclass
 class ResultData:
-    result: bool
-    data: dict = field(default_factory=dict)
+    ok: bool
+    unit_data: dict = field(default_factory=dict)
 
 
 class AttrDict(dict):
@@ -131,11 +135,7 @@ class AttrDict(dict):
         return r
 
     def __getattr__(self, item):
-        return self[item] if item in self.keys() else None
+        return self[item] if item in self else None
 
     def __setattr__(self, key, value):
         self[key] = value
-
-
-RData = ResultData
-

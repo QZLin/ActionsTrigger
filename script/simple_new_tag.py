@@ -1,24 +1,22 @@
 import argparse
-import json
 import logging
 
-import requests
-
-from RestApi import list_tags, RData, AttrDict
+from RestApi import list_tags, AttrDict, ResultData
 
 
-def handle(args):
+def handle(args: dict, unit_data: dict):
     logging.debug(args)
     args = AttrDict.from_dict(args)
     tags = list_tags(args.repo)
     if len(tags) == 0:
-        return RData(False)
+        return ResultData(False)
     last = tags[0]
-    print(last)
-    if args.last_tag == last['name']:
-        return RData(False)
+    logging.debug(last)
+    if 'last_tag' in unit_data and unit_data['last_tag'] == last['name']:
+        return ResultData(False, unit_data)
     else:
-        return RData(True, {'last_tag': last['name']})
+        unit_data['last_tag'] = last['name']
+        return ResultData(True, unit_data)
 
 
 if __name__ == '__main__':
@@ -26,4 +24,4 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('repo')
 
-    handle(parser.parse_args().__dict__)
+    handle(parser.parse_args().__dict__, {})

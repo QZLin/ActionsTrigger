@@ -3,7 +3,7 @@ import os
 
 import yaml
 
-from RestApi import ResultData, create_value, values, json, logging, update_values, StdCommand
+from RestApi import ResultData, create_value, get_actions_value, json, logging, update_values, ActionsCmd
 
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
@@ -11,9 +11,9 @@ except ImportError:
     from yaml import Loader, Dumper
 
 
-def unit_data(unit_id, actions_values=None) -> dict:
+def get_unit_data(unit_id, actions_values=None) -> dict:
     if actions_values is None:
-        actions_values = values()
+        actions_values = get_actions_value()
     v = [x for x in actions_values if x['name'] == unit_id]
     if len(v) == 1:
         v_content = v[0]['value']
@@ -23,54 +23,51 @@ def unit_data(unit_id, actions_values=None) -> dict:
         return {}
 
 
-def simple_handler(id_, args):
-    data = unit_data(id_)
+def simple_handler(unit_id, args):
+    origin_unit_data = get_unit_data(unit_id)
+    unit_data = origin_unit_data.copy()
 
-    to_update = {}
     cond_module = importlib.import_module(f'script.{args["condition"]["name"]}')
-    merged_data = data.copy()
-    merged_data.update(args['condition'])
-    r1: ResultData = cond_module.handle(merged_data)
-    to_update.update(r1.data)
+    cond_result: ResultData = cond_module.handle(args['condition'], unit_data)
 
-    if r1.result:
+    if cond_result.ok:
         action_module = importlib.import_module(f'script.{args["action"]["name"]}')
-        merged_data = data.copy()
-        merged_data.update(args['action'])
-        r2 = action_module.handle(merged_data)
-        if r2:
-            to_update.update(r2.data)
-        StdCommand.notice(f'#{id_} executed')
+        act_result: ResultData = action_module.handle(args['condition'], unit_data)
+        if act_result.ok:
+            unit_data.update(act_result.unit_data)
+        ActionsCmd.notice(f'#{unit_id} executed')
     else:
-        StdCommand.notice(f'#{id_} condition not reached')
-    new_data = data.copy()
-    new_data.update(to_update)
-    if data != new_data:
-        new_value = json.dumps(new_data)
+        ActionsCmd.notice(f'#{unit_id} skipped')
+    if origin_unit_data != unit_data:
+        new_value = json.dumps(unit_data)
         logging.info(new_value)
-        update_values(id_, new_value)
+        update_values(unit_id, new_value)
     else:
-        logging.info('unit data not changed')
+        logging.debug('unit data unchanged')
 
 
 def main():
     for x in next(os.walk('config'))[2]:
         conf_path = f'config/{x}'
         logging.info(conf_path)
-        StdCommand.notice(conf_path)
+        ActionsCmd.notice(conf_path)
         with open(conf_path) as f:
             data = yaml.load(f, Loader)
         if data is None:
-            StdCommand.warning('Empty conf')
+            ActionsCmd.warning('Empty conf')
             continue
-        for id_, args in data.items():
-            id_ = id_.upper()
-            logging.info(f'{id_}#{args["type"]}')
-            assert args['type'], 'args must have type'
+        for unit_id, args in data.items():
+            unit_id = unit_id.upper()
+            ActionsCmd.info(f'{unit_id}#{args["type"]}')
+
+            if 'type' not in args:
+                ActionsCmd.error('key type must exist')
+                continue
+
             if args['type'] == 'simple':
-                simple_handler(id_, args)
+                simple_handler(unit_id, args)
             else:
-                logging.error(f'Unimplemented handler {args["type"]}')
+                ActionsCmd.error(f'Unimplemented handler {args["type"]}')
 
 
 if __name__ == '__main__':

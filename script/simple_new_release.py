@@ -1,16 +1,14 @@
 import argparse
-import json
 import logging
 
-import requests
-
-from RestApi import list_releases, RData, AttrDict
+from RestApi import list_releases, AttrDict, ResultData
 
 
-def handle(args):
+def handle(args: dict, unit_data: dict):
     logging.debug(args)
     args = AttrDict.from_dict(args)
     assert args.repo
+    assert args.allow_prerelease
 
     releases = list_releases(args.repo)
     latest = None
@@ -23,13 +21,14 @@ def handle(args):
             break
     if latest is None:
         logging.warning(f'no release was found for {args.repo}#pre:{bool(args.allow_prerelease)}')
-    print(latest)
-    if latest is not None and args.last_tag != latest['tag_name']:
-        print(latest['tag_name'])
-        print('true')
-        return RData(True, {'last_tag': latest['tag_name']})
-    print('false')
-    return RData(False)
+    logging.debug(latest)
+    if latest is not None and unit_data['last_tag'] != latest['tag_name']:
+        logging.debug(latest['tag_name'])
+        logging.debug('true')
+        unit_data['last_tag'] = latest['tag_name']
+        return ResultData(True, unit_data)
+    logging.debug('false')
+    return ResultData(False)
 
 
 if __name__ == '__main__':
@@ -38,4 +37,4 @@ if __name__ == '__main__':
     parser.add_argument('repo')
     parser.add_argument('--allow-prerelease', action='store_true')
 
-    handle(parser.parse_args().__dict__)
+    handle(parser.parse_args().__dict__, {})
