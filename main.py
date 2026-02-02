@@ -32,7 +32,7 @@ def simple_handler(unit_id, args):
 
     if cond_result.ok:
         action_module = importlib.import_module(f'script.{args["action"]["name"]}')
-        act_result: ResultData = action_module.handle(args['condition'], unit_data)
+        act_result: ResultData = action_module.handle(args['action'], unit_data)
         if act_result.ok:
             unit_data.update(act_result.unit_data)
         ActionsCmd.notice(f'#{unit_id} executed')
