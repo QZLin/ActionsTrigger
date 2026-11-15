@@ -30,8 +30,8 @@ jobs:
     env:
       # Read by actions_trigger.settings; GITHUB_REPOSITORY is provided by Actions.
       GITHUB_TOKEN: ${{ secrets.PERSONALTOKEN }}
-      # Set to `schedule` on a manual dispatch to exercise the duplicate run pruning.
-      ACTIONS_TRIGGER_PRUNE_EVENT: ${{ inputs.prune_event }}
+      # TEMP-TEST: treat push runs as schedule runs to exercise duplicate pruning
+      ACTIONS_TRIGGER_PRUNE_EVENT: schedule
 
     steps:
       - uses: actions/checkout@v7.0.1
