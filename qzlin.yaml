@@ -1,0 +1,58 @@
+forward2_sync:
+  type: simple
+  condition:
+    repo: qzlin/forward
+    branch: main
+    name: simple_new_commit
+  action:
+    name: workflow_dispatch
+    repo: qzlin/forward2
+    branch: sync
+    id: sync.yml
+
+coredns_extract:
+  type: simple
+  condition:
+    repo: coredns/coredns
+    branch: master
+    name: simple_new_commit
+  action:
+    name: workflow_dispatch
+    repo: QZLin/coredns-extract
+    branch: main
+    id: sync.yaml
+
+minitouch_build:
+  type: simple
+  condition:
+    name: simple_new_tag
+    repo: DeviceFarmer/minitouch
+  action:
+    name: workflow_dispatch
+    repo: QZLin/minitouch
+    branch: main
+    id: main.yml
+
+bup_msys_build:
+  type: simple
+  condition:
+    name: simple_new_commit
+    repo: QZLin/bup-msys
+    branch: msys
+  action:
+    name: workflow_dispatch
+    repo: QZLin/bup-pkgbuild-msys
+    branch: build
+    id: build.yaml
+
+MagiskModulesAltRepojsonMirrorUpdate:
+  type: simple
+  condition:
+    name: simple_new_commit
+    repo: Magisk-Modules-Alt-Repo/json
+    branch: main
+  action:
+    name: workflow_dispatch
+    repo: QZLin/Magisk-Modules-Alt-Repo-json
+    branch: main
+    id: update.yml

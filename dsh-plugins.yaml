@@ -1,0 +1,11 @@
+dsh-workspace-migrate:
+  type: simple
+  condition:
+    name: simple_new_tag
+    repo: deepseek-ai/deepseek-harness
+    branch: master
+  action:
+    name: workflow_dispatch
+    repo: QZLin/dsh-workspace
+    branch: main
+    id: dsh-migrate.yml
