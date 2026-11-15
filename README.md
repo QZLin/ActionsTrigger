@@ -91,7 +91,9 @@ code 2). Values are read from the environment first, then from `.env`
 | `ACTIONS_TRIGGER_PRUNE_EVENT`   | `GITHUB_EVENT_NAME`        | –                        | Event used for duplicate pruning; only `schedule` prunes       |
 
 The token needs *Variables: read/write* on `ACTIONS_TRIGGER_REPO`, read access to
-the watched releases/contents, and *Actions: write* to dispatch workflows.
+the watched releases/contents, and *Actions: write* to dispatch workflows. Store
+it either bare or with its scheme (`Bearer ghp_...`); the scheme is mandatory on
+the wire and is added when missing, never duplicated.
 
 ## Unit definitions
 
@@ -260,7 +262,7 @@ uv run actions_trigger-prune --run-id 123456 --event schedule --dry-run
 | Option | Meaning |
 | --- | --- |
 | `--status` | print the booked windows and exit |
-| `--hash` | key-information hash of the run (default: hash of the stored unit states) |
+| `--hash` | key-information hash of the run (default: the booked one, i.e. "nothing changed since") |
 | `--previous-hash` | hash the run observed before starting (default: `--hash`, i.e. "no change") |
 | `--run-id` | run to act on (default `GITHUB_RUN_ID`) |
 | `--event` | event of the run (default `GITHUB_EVENT_NAME`); only `schedule` is pruned |

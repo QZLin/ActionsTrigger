@@ -180,21 +180,13 @@ def prune(state_hash: str, previous_hash: str, *, run_id: int | None = None,
                        deleted=deleted)
 
 
-def stored_fingerprint() -> str:
-    """Hash the unit states currently stored in the repository."""
-    values = {x['name']: x['value'] for x in repo_values(settings.repository())}
-    states: dict[str, Any] = {}
-    for name, value in values.items():
-        if name == DUP_VAR:
-            continue
-        if value == 'null':
-            states[name] = {}
-            continue
-        try:
-            states[name] = json.loads(value)
-        except ValueError:
-            states[name] = value
-    return fingerprint(states)
+def booked_hash() -> str | None:
+    """Hash of the window that is currently open, if any."""
+    windows = load_windows()
+    if not windows:
+        return None
+    # the most recently touched window is the one that is still being filled
+    return next(reversed(windows))
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -206,9 +198,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument('--status', action='store_true',
                         help='only print the booked windows')
     parser.add_argument('--hash', default=None,
-                        help='key-information hash of this run (default: hash of the stored unit states)')
+                        help='key-information hash of this run (default: the booked one, '
+                             'i.e. "nothing changed since")')
     parser.add_argument('--previous-hash', default=None,
-                        help='hash this run observed before it started (default: --hash, i.e. no change)')
+                        help='hash this run observed before it started (default: --hash)')
     parser.add_argument('--run-id', type=int, default=None,
                         help='run id to act on (default: GITHUB_RUN_ID)')
     parser.add_argument('--event', default=None,
@@ -233,7 +226,10 @@ def main(argv: list[str] | None = None) -> int:
             ActionsCmd.notice(f'duplicate windows: {message}')
             return 0
 
-        state_hash = args.hash or stored_fingerprint()
+        state_hash = args.hash or booked_hash()
+        if state_hash is None:
+            logging.error('no window booked yet, pass --hash <hash> [--previous-hash <hash>]')
+            return 2
         previous_hash = state_hash if args.previous_hash is None else args.previous_hash
         result = prune(state_hash, previous_hash, run_id=args.run_id, event=args.event,
                        dry_run=args.dry_run)
