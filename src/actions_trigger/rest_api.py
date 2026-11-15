@@ -45,33 +45,51 @@ def assert200(response: requests.Response) -> bool:
     return False
 
 
+class ApiError(RuntimeError):
+    """Raised when the REST API answers with an unexpected status."""
+
+    def __init__(self, what: str, response: requests.Response):
+        message = ''
+        try:
+            message = response.json().get('message', '')
+        except ValueError:
+            message = response.text[:200]
+        super().__init__(f'{what} failed with {response.status_code}: {message or response.content!r}')
+        self.status = response.status_code
+
+
+def _expect(response: requests.Response, what: str, *codes: int) -> None:
+    """Raise :class:`ApiError` unless the status code is one of ``codes``."""
+    if response.status_code not in codes:
+        raise ApiError(what, response)
+
+
 # https://docs.github.com/rest/actions/variables?apiVersion=2022-11-28#list-repository-variables
 def repo_value(repo: str, name: str) -> str:
     r = requests.get(_url(f'repos/{repo}/actions/variables/{name}'), headers=api_headers())
-    assert200(r)
-    json_data = json.loads(r.content)
-    return json_data['value']
+    _expect(r, f'get variable {name} of {repo}', 200)
+    return json.loads(r.content)['value']
 
 
 def repo_values(repo: str) -> list[dict[str, Any]]:
     r = requests.get(_url(f'repos/{repo}/actions/variables'), headers=api_headers())
-    assert200(r)
+    _expect(r, f'list variables of {repo}', 200)
     json_data = json.loads(r.content)
-    logging.info(f'variables of {repo}:\n{[x["name"] for x in json_data["variables"]]}')
-    return json_data['variables']
+    logging.info(f'variables of {repo}:\n{[x["name"] for x in json_data.get("variables", [])]}')
+    return json_data.get('variables', [])
 
 
 def create_repo_value(repo: str, name: str) -> None:
     r = requests.post(_url(f'repos/{repo}/actions/variables'), headers=api_headers(),
                       data=json.dumps({'name': name, 'value': 'null'}))
-    assert200(r)
+    _expect(r, f'create variable {name} of {repo}', 200, 201, 204)
     logging.info(f'create value for {repo}: {name}#{r.status_code}')
 
 
 def update_repo_value(repo: str, name: str, value: str) -> None:
     r = requests.patch(_url(f'repos/{repo}/actions/variables/{name}'), headers=api_headers(),
                        data=json.dumps({'name': name, 'value': value}))
-    assert200(r)
+    _expect(r, f'update variable {name} of {repo}', 200, 204)
     logging.info(f'update value for {repo}: {name}#{r.status_code}')
 
 
@@ -117,6 +135,30 @@ def list_contents(repo: str, path: str = '', ref: str | None = None) -> list[dic
         return None
     json_data = json.loads(r.content)
     return json_data if isinstance(json_data, list) else [json_data]
+
+
+# https://docs.github.com/rest/actions/workflow-runs?apiVersion=2022-11-28#delete-a-workflow-run
+def delete_workflow_run(repo: str, run_id: int) -> bool:
+    """Delete one workflow run; ``True`` when it was deleted by this call."""
+    r = requests.delete(_url(f'repos/{repo}/actions/runs/{run_id}'), headers=api_headers())
+    if r.status_code == 204:
+        logging.info(f'deleted run {run_id} of {repo}')
+        return True
+    if r.status_code == 404:
+        logging.warning(f'run {run_id} of {repo} not found, keep going')
+        return False
+    logging.error(f'delete run {run_id} of {repo} failed: {r.status_code} {r.content}')
+    return False
+
+
+# https://docs.github.com/rest/actions/workflow-runs?apiVersion=2022-11-28#get-a-workflow-run
+def get_workflow_run(repo: str, run_id: int) -> dict[str, Any] | None:
+    r = requests.get(_url(f'repos/{repo}/actions/runs/{run_id}'), headers=api_headers())
+    if r.status_code == 404:
+        return None
+    if assert200(r):
+        return None
+    return json.loads(r.content)
 
 
 # https://docs.github.com/actions/using-workflows/workflow-commands-for-github-actions

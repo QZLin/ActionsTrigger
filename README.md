@@ -58,6 +58,7 @@ uv run actions_trigger                   # or: uv run python -m actions_trigger
 |   |--- rest_api.py                <- GitHub REST helpers, ResultData, ActionsCmd, AttrDict
 |   |--- settings.py                <- env var / .env settings
 |   |--- external_config.py         <- config downloader, console script `actions_trigger-ext-config`
+|   |--- duplicate_runs.py          <- duplicate run pruning, console script `actions_trigger-prune`
 |   |--- script/                    <- handlers referenced by name from the configs
 |--- config                         <- unit definitions (yaml), scanned at runtime, git-ignored
 |--- config.example.yaml            <- example unit file
@@ -209,6 +210,62 @@ uv run actions_trigger-ext-config owner/repo -s release --tag store-config --all
 * the files are downloaded from the URLs returned by the API (no auth on the
   download itself), so the config repository must be publicly readable
 
+## Duplicate scheduled runs
+
+A cron schedule produces a run every 30 minutes, and most of them observe exactly
+the same upstream state. Those runs are *duplicates* of each other and only clutter
+the Actions history, so the ones in between are deleted automatically.
+
+The *key information* of a run is the state of every unit, i.e. the upstream
+fingerprints the conditions observed (`last_commit_sha`, `last_tag`, `last_hash`,
+...). It is hashed before and after the run:
+
+| | meaning | what happens |
+| --- | --- | --- |
+| hashes differ | the run discovered something new | kept, booked as the earliest run of that state, never deleted |
+| hashes match | the run learned nothing, it is a duplicate | the previous duplicate of that state is deleted, the current run is kept |
+
+So for every distinct state the earliest and the latest run are kept - exactly the
+two runs worth keeping - and the duplicates in between are deleted through
+`DELETE /repos/{repo}/actions/runs/{id}`.
+
+The bookkeeping is one repository Actions variable, `ACTIONS_TRIGGER_DUP_STATE`,
+holding a window per state hash:
+
+```json
+{"<hash>": [earliest_run_id, latest_duplicate_run_id], "<hash>": [...]}
+```
+
+At most 20 windows are remembered (the least recently used one is dropped, which
+only means that a state seen again is booked from scratch). Runs of other events
+(`push`, `workflow_dispatch`) are never treated as duplicates, and history is
+never guessed: only runs that a run booked itself can be deleted, so enabling this
+feature touches nothing that already exists.
+
+It runs automatically at the end of every scheduled run; pruning failures are
+logged and never fail the job. For manual inspection or for a workflow step that
+reports the result itself:
+
+```pwsh
+uv run actions_trigger-prune --status                     # booked windows
+uv run actions_trigger-prune --dry-run                    # what would happen now
+uv run actions_trigger-prune --hash H --previous-hash P   # act on a declared result
+uv run actions_trigger-prune --run-id 123456 --event schedule --dry-run
+```
+
+| Option | Meaning |
+| --- | --- |
+| `--status` | print the booked windows and exit |
+| `--hash` | key-information hash of the run (default: hash of the stored unit states) |
+| `--previous-hash` | hash the run observed before starting (default: `--hash`, i.e. "no change") |
+| `--run-id` | run to act on (default `GITHUB_RUN_ID`) |
+| `--event` | event of the run (default `GITHUB_EVENT_NAME`); only `schedule` is pruned |
+| `--dry-run` | report without deleting or writing anything |
+
+`--event schedule --run-id <id>` is how you exercise the logic for an existing run
+without waiting for the cron. The token needs *Actions: write* to delete runs and
+*Variables: read/write* to keep the bookkeeping.
+
 ## CI
 
 `.github/workflows/main.yml` runs the whole thing every 30 minutes (also on push
@@ -234,6 +291,7 @@ uv run python -m unittest discover -s tests -v
 |-----------------------------------|------------------------------------------------------------------------------------|
 | `tests/test_main.py`              | unit loop: `actions` list order, failing actions, state merging, config validation |
 | `tests/test_external_config.py`   | release/branch sources, yaml filtering, no-override, unsafe names                  |
+| `tests/test_duplicate_runs.py`    | key-information hashing, duplicate windows, deletion, dry-run, CLI                  |
 | `tests/test_rest_api.py`          | `AttrDict`                                                                         |
 | `tests/test_curl_hash_changed.py` | a real HTTP round trip; skipped when the network is unavailable                    |
 
@@ -244,6 +302,8 @@ uv run python -m unittest discover -s tests -v
   so GitHub Enterprise is not fully supported
 * HTTP calls have no timeout
 * a unit's whole state is stored in one Actions variable, so keep it small
+* duplicate pruning keeps at most 20 state windows and never cleans history that
+  was created before the feature existed
 
 ## License
 

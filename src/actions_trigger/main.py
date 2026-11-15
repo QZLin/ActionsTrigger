@@ -10,14 +10,16 @@ from __future__ import annotations
 import importlib
 import json
 import logging
+from dataclasses import dataclass, field
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable
 
 import yaml
 
-from . import settings
-from .rest_api import ActionsCmd, ResultData, create_value, get_actions_value, update_values
+from . import duplicate_runs, settings
+from .rest_api import (ActionsCmd, ApiError, ResultData, create_value, get_actions_value,
+                       update_values)
 
 try:  # the libyaml based loader is much faster when available
     from yaml import CLoader as Loader
@@ -72,11 +74,12 @@ def unit_actions(unit_id: str, args: dict) -> list[dict]:
     return valid
 
 
-def simple_handler(unit_id: str, args: dict) -> None:
+def simple_handler(unit_id: str, args: dict) -> 'UnitOutcome | None':
+    """Run one unit; returns the state it observed before and after."""
     actions = unit_actions(unit_id, args)
     if not actions:
         logging.error(f'#{unit_id}: no action to run')
-        return
+        return None
 
     origin_unit_data = get_unit_data(unit_id)
     unit_data = origin_unit_data.copy()
@@ -103,18 +106,71 @@ def simple_handler(unit_id: str, args: dict) -> None:
     else:
         logging.debug('unit data unchanged')
 
+    return UnitOutcome(origin=origin_unit_data, final=unit_data, executed=cond_result.ok)
 
-HANDLERS: dict[str, Callable[[str, dict], None]] = {
+
+HANDLERS: dict[str, Callable[[str, dict], 'UnitOutcome | None']] = {
     'simple': simple_handler,
 }
 
 
-def run(config_path: Path | None = None) -> int:
-    """Process every config file in ``config_path``; returns a process exit code."""
+@dataclass
+class UnitOutcome:
+    """State of one unit around a run."""
+
+    origin: dict
+    final: dict
+    executed: bool
+
+    @property
+    def changed(self) -> bool:
+        return self.origin != self.final
+
+
+@dataclass
+class RunReport:
+    """Outcome of one pass over the config directory."""
+
+    config_path: Path
+    outcomes: dict[str, UnitOutcome] = field(default_factory=dict)
+    exit_code: int = 0
+
+    @property
+    def states(self) -> dict[str, dict]:
+        """Key information of the run: the state of every unit afterwards."""
+        return {unit_id: outcome.final for unit_id, outcome in self.outcomes.items()}
+
+    @property
+    def origin_states(self) -> dict[str, dict]:
+        """Key information as it was known when the run started."""
+        return {unit_id: outcome.origin for unit_id, outcome in self.outcomes.items()}
+
+    @property
+    def fingerprint(self) -> str:
+        return duplicate_runs.fingerprint(self.states)
+
+    @property
+    def origin_fingerprint(self) -> str:
+        return duplicate_runs.fingerprint(self.origin_states)
+
+    @property
+    def executed(self) -> list[str]:
+        """Units whose condition detected an upstream change."""
+        return [unit_id for unit_id, outcome in self.outcomes.items() if outcome.executed]
+
+    @property
+    def changed(self) -> bool:
+        return self.fingerprint != self.origin_fingerprint
+
+
+def run(config_path: Path | None = None) -> RunReport:
+    """Process every config file in ``config_path``."""
     config_path = settings.config_dir() if config_path is None else config_path
+    report = RunReport(config_path)
     if not config_path.is_dir():
         logging.error(f'config directory not found: {config_path}')
-        return 1
+        report.exit_code = 1
+        return report
 
     for conf_path in sorted(p for p in config_path.iterdir() if p.is_file()):
         logging.info(str(conf_path))
@@ -138,9 +194,11 @@ def run(config_path: Path | None = None) -> int:
             if handler is None:
                 ActionsCmd.error(f'Unimplemented handler {unit_type}')
                 continue
-            handler(unit_id, args)
+            outcome = handler(unit_id, args)
+            if outcome is not None:
+                report.outcomes[unit_id] = outcome
 
-    return 0
+    return report
 
 
 def setup_logging() -> None:
@@ -148,10 +206,38 @@ def setup_logging() -> None:
     logging.getLogger().setLevel(logging.DEBUG if settings.debug() else logging.INFO)
 
 
+def prune_duplicate_runs(report: RunReport) -> None:
+    """Drop older duplicates of an unchanged scheduled run; never breaks the run."""
+    if report.exit_code != 0:
+        return
+    try:
+        result = duplicate_runs.prune(report.fingerprint, report.origin_fingerprint)
+    except settings.MissingSettingError as e:
+        logging.debug(f'duplicate run pruning needs GitHub settings: {e}')
+        return
+    except Exception as e:  # pruning is a janitor job, it must not fail the run
+        logging.error(f'duplicate run pruning failed: {e}')
+        return
+
+    logging.info(result.describe())
+    if result.action != 'skipped':
+        ActionsCmd.notice(result.describe())
+
+
 def main() -> int:
     setup_logging()
     try:
-        return run()
+        report = run()
     except settings.MissingSettingError as e:
         logging.error(e)
         return 2
+    except ApiError as e:
+        logging.error(e)
+        return 1
+
+    if report.changed:
+        logging.info(f'key information changed, observed by {", ".join(report.executed) or "no unit"}')
+    else:
+        logging.info(f'key information unchanged (state {report.fingerprint[:12]})')
+    prune_duplicate_runs(report)
+    return report.exit_code

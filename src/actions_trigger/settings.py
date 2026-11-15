@@ -100,4 +100,20 @@ def debug() -> bool:
     return Path(_DEBUG_FILE).exists()
 
 
+def in_actions() -> bool:
+    """True when running inside a GitHub Actions job."""
+    return (_first('GITHUB_ACTIONS') or '').lower() == 'true'
+
+
+def run_id() -> int | None:
+    """Id of the current workflow run (``GITHUB_RUN_ID``), ``None`` outside Actions."""
+    value = _first('GITHUB_RUN_ID')
+    return int(value) if value and value.isdigit() else None
+
+
+def event_name() -> str | None:
+    """Event that started the current run (``GITHUB_EVENT_NAME``)."""
+    return _first('GITHUB_EVENT_NAME')
+
+
 load_env()
