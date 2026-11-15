@@ -14,11 +14,16 @@ from .settings import api_url, repository, token
 
 
 def api_headers() -> dict[str, str]:
-    """Request headers for an authenticated GitHub API call."""
+    """Request headers for an authenticated GitHub API call.
+
+    The ``Bearer`` scheme is mandatory: a bare token value is rejected with
+    ``401 Requires authentication`` (fine-grained tokens always need it, and
+    classic tokens are heading the same way).
+    """
     return {
         'Accept': 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
-        'Authorization': token(),
+        'Authorization': f'Bearer {token()}',
     }
 
 

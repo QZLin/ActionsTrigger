@@ -113,6 +113,15 @@ class DeleteRunTestCase(unittest.TestCase):
         error.assert_called_once()
 
 
+class ApiHeadersTestCase(unittest.TestCase):
+    def test_token_uses_the_bearer_scheme(self):
+        with mock.patch.object(rest_api, 'token', return_value='tok123'):
+            headers = rest_api.api_headers()
+
+        self.assertEqual(headers['Authorization'], 'Bearer tok123')
+        self.assertEqual(headers['X-GitHub-Api-Version'], '2022-11-28')
+
+
 class VariableNameTestCase(unittest.TestCase):
     def test_hyphens_become_underscores(self):
         self.assertEqual(rest_api.variable_name('DSH-WORKSPACE-MIGRATE'), 'DSH_WORKSPACE_MIGRATE')
