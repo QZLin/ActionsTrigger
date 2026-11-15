@@ -116,4 +116,13 @@ def event_name() -> str | None:
     return _first('GITHUB_EVENT_NAME')
 
 
+def prune_event() -> str | None:
+    """Event used to decide whether duplicate runs are pruned.
+
+    ``ACTIONS_TRIGGER_PRUNE_EVENT`` overrides ``GITHUB_EVENT_NAME``, which makes it
+    possible to exercise the ``schedule`` path from a manual dispatch.
+    """
+    return _first('ACTIONS_TRIGGER_PRUNE_EVENT') or event_name()
+
+
 load_env()

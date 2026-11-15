@@ -11,6 +11,15 @@ on:
   #    branches: [ "main" ]
 
   workflow_dispatch:
+    inputs:
+      prune_event:
+        description: "Treat this run as an event of this kind for duplicate pruning"
+        required: false
+        default: ""
+        type: choice
+        options:
+          - ""
+          - schedule
 
 jobs:
   main:
@@ -21,6 +30,8 @@ jobs:
     env:
       # Read by actions_trigger.settings; GITHUB_REPOSITORY is provided by Actions.
       GITHUB_TOKEN: ${{ secrets.PERSONALTOKEN }}
+      # Set to `schedule` on a manual dispatch to exercise the duplicate run pruning.
+      ACTIONS_TRIGGER_PRUNE_EVENT: ${{ inputs.prune_event }}
 
     steps:
       - uses: actions/checkout@v7.0.1
@@ -47,3 +58,8 @@ jobs:
           uv run actions_trigger-ext-config "${{ github.repository }}" --source branch
           uv run actions_trigger-ext-config "${{ github.repository }}" --source release
           uv run actions_trigger
+      - name: Duplicate Runs
+        if: always()
+        run: |
+          #!/usr/bin/pwsh
+          uv run actions_trigger-prune --status

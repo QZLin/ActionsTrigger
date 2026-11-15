@@ -59,9 +59,21 @@ class ApiError(RuntimeError):
 
 
 def _expect(response: requests.Response, what: str, *codes: int) -> None:
-    """Raise :class:`ApiError` unless the status code is one of ``codes``."""
-    if response.status_code not in codes:
-        raise ApiError(what, response)
+    """Raise :class:`ApiError` and annotate the failure unless the status is expected."""
+    if response.status_code in codes:
+        return
+    error = ApiError(what, response)
+    logging.error(error)
+    ActionsCmd.error(str(error))
+    raise error
+
+
+def _next_page(response: requests.Response) -> str | None:
+    """Extract the ``rel="next"`` URL from the Link header, if any."""
+    for part in (response.headers.get('Link') or '').split(','):
+        if 'rel="next"' in part:
+            return part.split(';')[0].strip().strip('<>')
+    return None
 
 
 # https://docs.github.com/rest/actions/variables?apiVersion=2022-11-28#list-repository-variables
@@ -72,16 +84,26 @@ def repo_value(repo: str, name: str) -> str:
 
 
 def repo_values(repo: str) -> list[dict[str, Any]]:
-    r = requests.get(_url(f'repos/{repo}/actions/variables'), headers=api_headers())
-    _expect(r, f'list variables of {repo}', 200)
-    json_data = json.loads(r.content)
-    logging.info(f'variables of {repo}:\n{[x["name"] for x in json_data.get("variables", [])]}')
-    return json_data.get('variables', [])
+    """Every variable of ``repo``, following pagination."""
+    url: str | None = _url(f'repos/{repo}/actions/variables')
+    params: dict[str, int] | None = {'per_page': 100}
+    variables: list[dict[str, Any]] = []
+    while url:
+        r = requests.get(url, headers=api_headers(), params=params)
+        _expect(r, f'list variables of {repo}', 200)
+        variables.extend(json.loads(r.content).get('variables') or [])
+        url = _next_page(r)
+        params = None  # the next page url already carries the query
+    logging.info(f'variables of {repo}:\n{[x["name"] for x in variables]}')
+    return variables
 
 
 def create_repo_value(repo: str, name: str) -> None:
     r = requests.post(_url(f'repos/{repo}/actions/variables'), headers=api_headers(),
                       data=json.dumps({'name': name, 'value': 'null'}))
+    if r.status_code == 409:  # the variable already exists, nothing to create
+        logging.debug(f'variable {name} of {repo} already exists')
+        return
     _expect(r, f'create variable {name} of {repo}', 200, 201, 204)
     logging.info(f'create value for {repo}: {name}#{r.status_code}')
 
@@ -148,6 +170,7 @@ def delete_workflow_run(repo: str, run_id: int) -> bool:
         logging.warning(f'run {run_id} of {repo} not found, keep going')
         return False
     logging.error(f'delete run {run_id} of {repo} failed: {r.status_code} {r.content}')
+    ActionsCmd.error(f'delete run {run_id} of {repo} failed with {r.status_code}')
     return False
 
 

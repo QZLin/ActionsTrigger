@@ -31,7 +31,8 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 from . import settings
-from .rest_api import ApiError, create_value, delete_workflow_run, repo_values, update_values
+from .rest_api import (ActionsCmd, ApiError, create_value, delete_workflow_run, repo_values,
+                       update_values)
 
 DUP_VAR = 'ACTIONS_TRIGGER_DUP_STATE'
 SCHEDULE_EVENT = 'schedule'
@@ -133,7 +134,7 @@ def prune(state_hash: str, previous_hash: str, *, run_id: int | None = None,
     the run; equal hashes mean the run is a duplicate.
     """
     run_id = settings.run_id() if run_id is None else run_id
-    event = settings.event_name() if event is None else event
+    event = settings.prune_event() if event is None else event
 
     if event != SCHEDULE_EVENT:
         return PruneResult('skipped', reason=f'event is {event or "unknown"}, not {SCHEDULE_EVENT}',
@@ -225,10 +226,11 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.status:
             windows = load_windows()
-            if not windows:
-                print('no window booked yet')
-            for state_hash, window in windows.items():
-                print(f'{state_hash[:12]}  earliest={window[0]}  latest={window[1]}')
+            message = 'no window booked yet' if not windows else '; '.join(
+                f'{state_hash[:12]} earliest=#{window[0]} latest=#{window[1]}'
+                for state_hash, window in windows.items())
+            print(message)
+            ActionsCmd.notice(f'duplicate windows: {message}')
             return 0
 
         state_hash = args.hash or stored_fingerprint()

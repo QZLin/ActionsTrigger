@@ -172,5 +172,53 @@ class SingleActionTestCase(SimpleHandlerTestCase):
         self.assertEqual(out['warnings'], [])
 
 
+class RunLoopTestCase(unittest.TestCase):
+    """A broken unit must not stop the run; the report records it."""
+
+    def run_dir(self, yaml_text: str, modules: dict) -> main.RunReport:
+        import tempfile
+        from pathlib import Path as _Path
+
+        def resolve(name: str):
+            return modules[name]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            (_Path(tmp) / 'units.yaml').write_text(yaml_text, encoding='utf-8')
+            with mock.patch.object(main, 'load_handler', side_effect=resolve), \
+                    mock.patch.object(main, 'get_unit_data', return_value={}), \
+                    mock.patch.object(main, 'update_values'), \
+                    mock.patch.object(main.ActionsCmd, 'notice'), \
+                    mock.patch.object(main.ActionsCmd, 'error'):
+                return main.run(_Path(tmp))
+
+    def test_broken_unit_does_not_stop_the_others(self):
+        class Boom:
+            def handle(self, args, unit_data):
+                raise RuntimeError('upstream exploded')
+
+        report = self.run_dir(
+            'broken:\n  type: simple\n  condition:\n    name: boom\n  action:\n    name: ok\n'
+            'fine:\n  type: simple\n  condition:\n    name: ok\n  action:\n    name: writes\n',
+            {'boom': Boom(), 'ok': FakeHandler(ok=True), 'writes': FakeHandler(ok=True, data={'seen': 1})},
+        )
+
+        self.assertEqual(list(report.failed), ['BROKEN'])
+        self.assertIn('RuntimeError', report.failed['BROKEN'])
+        self.assertEqual(list(report.outcomes), ['FINE'])
+        self.assertEqual(report.states, {'FINE': {'seen': 1}})
+        self.assertTrue(report.changed)
+
+    def test_report_exposes_state_hashes(self):
+        report = self.run_dir(
+            'one:\n  type: simple\n  condition:\n    name: ok\n  action:\n    name: ok\n',
+            {'ok': FakeHandler(ok=True)},
+        )
+
+        self.assertEqual(report.states, {'ONE': {}})
+        self.assertEqual(report.fingerprint, report.origin_fingerprint)
+        self.assertFalse(report.changed)
+        self.assertEqual(report.failed, {})
+
+
 if __name__ == '__main__':
     unittest.main()

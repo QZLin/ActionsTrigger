@@ -133,6 +133,7 @@ class RunReport:
 
     config_path: Path
     outcomes: dict[str, UnitOutcome] = field(default_factory=dict)
+    failed: dict[str, str] = field(default_factory=dict)
     exit_code: int = 0
 
     @property
@@ -194,7 +195,13 @@ def run(config_path: Path | None = None) -> RunReport:
             if handler is None:
                 ActionsCmd.error(f'Unimplemented handler {unit_type}')
                 continue
-            outcome = handler(unit_id, args)
+            try:
+                outcome = handler(unit_id, args)
+            except Exception as e:  # one broken unit must not stop the others
+                logging.exception(f'#{unit_id} failed')
+                ActionsCmd.error(f'#{unit_id} failed: {type(e).__name__}: {e}')
+                report.failed[unit_id] = f'{type(e).__name__}: {e}'
+                continue
             if outcome is not None:
                 report.outcomes[unit_id] = outcome
 
@@ -239,5 +246,10 @@ def main() -> int:
         logging.info(f'key information changed, observed by {", ".join(report.executed) or "no unit"}')
     else:
         logging.info(f'key information unchanged (state {report.fingerprint[:12]})')
+    # a unit failure leaves the key information incomplete, so nothing is pruned
+    if report.failed:
+        ActionsCmd.error(f'{len(report.failed)} unit(s) failed: {", ".join(report.failed)}')
+        return 1
+
     prune_duplicate_runs(report)
     return report.exit_code

@@ -88,6 +88,7 @@ code 2). Values are read from the environment first, then from `.env`
 | `ACTIONS_TRIGGER_CONFIG_TAG`    | –                          | `store-config`           | Release tag for `source=release`                               |
 | `ACTIONS_TRIGGER_CONFIG_BRANCH` | –                          | `config`                 | Branch for `source=branch`                                     |
 | `ACTIONS_TRIGGER_CONFIG_PATH`   | –                          | branch root              | Directory inside the branch                                    |
+| `ACTIONS_TRIGGER_PRUNE_EVENT`   | `GITHUB_EVENT_NAME`        | –                        | Event used for duplicate pruning; only `schedule` prunes       |
 
 The token needs *Variables: read/write* on `ACTIONS_TRIGGER_REPO`, read access to
 the watched releases/contents, and *Actions: write* to dispatch workflows.
@@ -138,8 +139,11 @@ Behavior worth knowing:
   `null`, which means "empty state"
 * files are processed in sorted order; an empty file only warns, a unit without
   `type` or with an unknown `type` is reported and skipped
-* exit codes: `0` success, `1` config directory missing (or an unexpected
-  exception), `2` missing settings
+* a unit that raises is reported as `::error::#UNIT failed: <error>` and the
+  remaining units still run; the job then fails, but nothing is pruned, because
+  an incomplete unit set would produce a meaningless key-information hash
+* exit codes: `0` success, `1` a unit failed, the config directory is missing or
+  the API rejected a call, `2` missing settings
 
 ## Handlers
 
@@ -263,8 +267,13 @@ uv run actions_trigger-prune --run-id 123456 --event schedule --dry-run
 | `--dry-run` | report without deleting or writing anything |
 
 `--event schedule --run-id <id>` is how you exercise the logic for an existing run
-without waiting for the cron. The token needs *Actions: write* to delete runs and
-*Variables: read/write* to keep the bookkeeping.
+without waiting for the cron; `--status` also emits a `::notice::` so the booked
+windows can be read from the run's annotations. The token needs *Actions: write* to
+delete runs and *Variables: read/write* to keep the bookkeeping.
+
+`ACTIONS_TRIGGER_PRUNE_EVENT` overrides the event used for that decision, which is
+what the workflow's `prune_event` dispatch input sets - dispatch the workflow with
+`prune_event: schedule` to test the pruning path on demand.
 
 ## CI
 
