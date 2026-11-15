@@ -59,8 +59,8 @@ def repository() -> str:
 
 
 def token() -> str:
-    """Token used for the GitHub REST API."""
-    return _required(('ACTIONS_TRIGGER_TOKEN', 'GITHUB_TOKEN', 'GH_TOKEN'), 'see .env.example')
+    """Token used for the GitHub REST API (surrounding whitespace removed)."""
+    return _required(('ACTIONS_TRIGGER_TOKEN', 'GITHUB_TOKEN', 'GH_TOKEN'), 'see .env.example').strip()
 
 
 def api_url() -> str:

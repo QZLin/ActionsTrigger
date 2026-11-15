@@ -121,6 +121,16 @@ class ApiHeadersTestCase(unittest.TestCase):
         self.assertEqual(headers['Authorization'], 'Bearer tok123')
         self.assertEqual(headers['X-GitHub-Api-Version'], '2022-11-28')
 
+    def test_a_stored_scheme_is_not_duplicated(self):
+        for stored in ('Bearer tok123', 'bearer tok123', 'token tok123', '  Bearer tok123  '):
+            with mock.patch.object(rest_api, 'token', return_value=stored):
+                headers = rest_api.api_headers()
+            self.assertEqual(headers['Authorization'].lower().count('bearer'), stored.lower().count('bearer'))
+            self.assertTrue(headers['Authorization'].startswith(('Bearer', 'bearer', 'token')))
+
+    def test_surrounding_whitespace_is_removed(self):
+        self.assertEqual(rest_api.authorization_header('  tok123\n'), 'Bearer tok123')
+
 
 class VariableNameTestCase(unittest.TestCase):
     def test_hyphens_become_underscores(self):

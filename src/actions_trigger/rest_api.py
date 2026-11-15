@@ -13,17 +13,29 @@ import requests
 from .settings import api_url, repository, token
 
 
-def api_headers() -> dict[str, str]:
-    """Request headers for an authenticated GitHub API call.
+AUTH_SCHEMES = ('bearer ', 'token ', 'basic ')
 
-    The ``Bearer`` scheme is mandatory: a bare token value is rejected with
-    ``401 Requires authentication`` (fine-grained tokens always need it, and
-    classic tokens are heading the same way).
+
+def authorization_header(raw: str) -> str:
+    """Build the ``Authorization`` value from a stored token.
+
+    The scheme is mandatory - a bare value is answered with
+    ``401 Requires authentication`` - but secrets are often stored with the
+    scheme already in them (``Bearer ghp_...``), so it is not added twice.
     """
+    value = raw.strip()
+    if value.lower().startswith(AUTH_SCHEMES):
+        logging.debug('the configured token already carries an auth scheme')
+        return value
+    return f'Bearer {value}'
+
+
+def api_headers() -> dict[str, str]:
+    """Request headers for an authenticated GitHub API call."""
     return {
         'Accept': 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
-        'Authorization': f'Bearer {token()}',
+        'Authorization': authorization_header(token()),
     }
 
 
