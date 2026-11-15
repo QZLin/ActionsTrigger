@@ -113,5 +113,24 @@ class DeleteRunTestCase(unittest.TestCase):
         error.assert_called_once()
 
 
+class VariableNameTestCase(unittest.TestCase):
+    def test_hyphens_become_underscores(self):
+        self.assertEqual(rest_api.variable_name('DSH-WORKSPACE-MIGRATE'), 'DSH_WORKSPACE_MIGRATE')
+
+    def test_legal_names_are_untouched(self):
+        self.assertEqual(rest_api.variable_name('FORWARD2_SYNC'), 'FORWARD2_SYNC')
+
+    def test_leading_digit_is_prefixed(self):
+        self.assertEqual(rest_api.variable_name('2fa_check'), '_2fa_check')
+
+    def test_storage_calls_use_the_sanitized_name(self):
+        with mock.patch.object(rest_api, 'api_headers', return_value={}), \
+                mock.patch.object(rest_api.requests, 'patch', return_value=response(204)) as patch, \
+                mock.patch.object(rest_api, 'repository', return_value='o/r'):
+            rest_api.update_values('MY-UNIT', '{}')
+
+        self.assertTrue(patch.call_args.args[0].endswith('/actions/variables/MY_UNIT'))
+
+
 if __name__ == '__main__':
     unittest.main()

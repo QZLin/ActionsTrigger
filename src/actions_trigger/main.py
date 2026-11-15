@@ -19,7 +19,7 @@ import yaml
 
 from . import duplicate_runs, settings
 from .rest_api import (ActionsCmd, ApiError, ResultData, create_value, get_actions_value,
-                       update_values)
+                       update_values, variable_name)
 
 try:  # the libyaml based loader is much faster when available
     from yaml import CLoader as Loader
@@ -31,11 +31,12 @@ def get_unit_data(unit_id: str, actions_values: list[dict[str, Any]] | None = No
     """Load the stored state of a unit, creating an empty one when absent."""
     if actions_values is None:
         actions_values = get_actions_value()
-    found = [x for x in actions_values if x['name'] == unit_id]
+    name = variable_name(unit_id)
+    found = [x for x in actions_values if x['name'] == name]
     if len(found) == 1:
         content = found[0]['value']
         return json.loads(content) if content != 'null' else {}
-    create_value(unit_id)
+    create_value(name)
     return {}
 
 

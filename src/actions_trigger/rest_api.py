@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -25,16 +26,31 @@ def _url(path: str) -> str:
     return f'{api_url()}/{path.lstrip("/")}'
 
 
+_VARIABLE_NAME_INVALID = re.compile(r'[^0-9A-Za-z_]')
+
+
+def variable_name(name: str) -> str:
+    """Turn ``name`` into a legal Actions variable name.
+
+    GitHub only allows alphanumerics and underscores, and the name must not start
+    with a digit: ``dsh-workspace-migrate`` becomes ``DSH_WORKSPACE_MIGRATE``.
+    """
+    cleaned = _VARIABLE_NAME_INVALID.sub('_', name)
+    if not cleaned or cleaned[0].isdigit():
+        cleaned = f'_{cleaned}'
+    return cleaned
+
+
 def get_actions_value() -> list[dict[str, Any]]:
     return repo_values(repository())
 
 
 def update_values(name: str, value: str) -> None:
-    update_repo_value(repository(), name, value)
+    update_repo_value(repository(), variable_name(name), value)
 
 
 def create_value(name: str) -> None:
-    create_repo_value(repository(), name)
+    create_repo_value(repository(), variable_name(name))
 
 
 def assert200(response: requests.Response) -> bool:

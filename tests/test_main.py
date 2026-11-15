@@ -175,6 +175,15 @@ class SingleActionTestCase(SimpleHandlerTestCase):
 class RunLoopTestCase(unittest.TestCase):
     """A broken unit must not stop the run; the report records it."""
 
+    def test_unit_state_lookup_uses_the_sanitized_variable_name(self):
+        with mock.patch.object(main, 'get_actions_value',
+                              return_value=[{'name': 'DASH_UNIT', 'value': '{"a": 1}'}]), \
+                mock.patch.object(main, 'create_value') as create:
+            data = main.get_unit_data('DASH-UNIT')
+
+        self.assertEqual(data, {'a': 1})
+        create.assert_not_called()
+
     def run_dir(self, yaml_text: str, modules: dict) -> main.RunReport:
         import tempfile
         from pathlib import Path as _Path
