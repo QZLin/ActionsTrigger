@@ -3,8 +3,14 @@ name = "ActionsTrigger"
 version = "0.2.0"
 description = "Github Actions Trigger"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "requests",
-    "pyyaml"
-]
+authors = [{ name = "QZLin", email = "qzlin01@163.com" }]
+requires-python = ">=3.14"
+dependencies = ["requests", "pyyaml", "python-dotenv"]
+
+[project.scripts]
+actionstrigger = "actionstrigger.main:main"
+actionstrigger-ext-config = "actionstrigger.external_config:main"
+
+[build-system]
+requires = ["uv_build>=0.13.5,<0.14.0"]
+build-backend = "uv_build"

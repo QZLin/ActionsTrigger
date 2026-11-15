@@ -4,7 +4,7 @@ import logging
 
 import requests
 
-from RestApi import headers, ResultData, AttrDict
+from ..rest_api import AttrDict, ResultData, api_headers
 
 
 def handle(args: dict, unit_data: dict) -> ResultData:
@@ -13,7 +13,7 @@ def handle(args: dict, unit_data: dict) -> ResultData:
     assert args.repo
     assert args.branch
     r = requests.get(f'https://api.github.com/repos/{args.repo}/branches',
-                     headers=headers)
+                     headers=api_headers())
     r_data = json.loads(r.content)
     branch_filtered = [x for x in r_data if x['name'] == args.branch]
 

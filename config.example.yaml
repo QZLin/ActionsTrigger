@@ -1,0 +1,8 @@
+example_unit:
+  type: simple
+  condition:
+    name: basic_action
+  action:
+    name: echo
+    content: ::notice::Hello, world!
+# store config at `config` branch or a release tagged with `store-config` are also supported

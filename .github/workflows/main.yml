@@ -18,23 +18,21 @@ jobs:
     defaults:
       run:
         shell: pwsh
+    env:
+      # Read by actionstrigger.settings; GITHUB_REPOSITORY is provided by Actions.
+      GITHUB_TOKEN: ${{ secrets.PERSONALTOKEN }}
 
     steps:
       - uses: actions/checkout@v7.0.1
-      - name: Init Secret
-        run: |
-          #!/usr/bin/pwsh
-          $cfg="secret/config.py"
-          touch $cfg
-          echo "this_repo=r'${{ github.repository }}'" >> $cfg
-          echo "token=r'${{ secrets.PERSONALTOKEN }}'" >> $cfg
       - uses: actions/setup-python@v7.1.0
         with:
-          python-version: "3.13"
+          python-version: "3.14"
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - name: Init Python Env
         run: |
           #!/usr/bin/pwsh
-          . ./init.ps1
+          uv sync
       - name: Check Env
         run: |
           #!/usr/bin/pwsh
@@ -42,12 +40,10 @@ jobs:
           which uv
           uv self version
           uv run python --version
-          uv pip list
+          uv tree
       - name: Execute Script
         run: |
           #!/usr/bin/pwsh
-          uv run fetch_external_config.py "${{ github.repository }}"
-          uv run main.py
-
-      - name: Clean Secret
-        run: rm secret/config.py
+          uv run actionstrigger-ext-config "${{ github.repository }}" --source branch
+          uv run actionstrigger-ext-config "${{ github.repository }}" --source release
+          uv run actionstrigger

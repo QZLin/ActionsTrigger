@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from RestApi import list_releases, AttrDict, ResultData
+from ..rest_api import AttrDict, ResultData, list_releases
 
 
 def handle(args: dict, unit_data: dict):

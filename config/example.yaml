@@ -1,7 +1,0 @@
-example_unit:
-  type: simple
-  condition:
-    name: BasicAction
-  action:
-    name: echo
-    content: ::notice::Hello, world!

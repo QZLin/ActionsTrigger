@@ -1,5 +1,4 @@
-config/*
-!config/example.yaml
+config/
 secret/*
 !.git*
 !*.example.*
