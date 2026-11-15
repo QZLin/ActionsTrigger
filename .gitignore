@@ -166,3 +166,7 @@ cython_debug/
 #.idea/
 
 uv.lock
+
+# local scratch scripts
+watch_run.py
+smoke_*.py
