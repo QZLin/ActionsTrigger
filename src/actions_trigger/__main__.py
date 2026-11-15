@@ -1,4 +1,4 @@
-"""Support ``python -m actionstrigger``."""
+"""Support ``python -m actions_trigger``."""
 
 import sys
 

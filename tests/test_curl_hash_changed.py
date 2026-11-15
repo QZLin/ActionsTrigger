@@ -2,7 +2,7 @@ import unittest
 
 import requests
 
-from actionstrigger.script.curl_hash_changed import handle
+from actions_trigger.script.curl_hash_changed import handle
 
 
 class CurlHashChangedTestCase(unittest.TestCase):

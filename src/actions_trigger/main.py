@@ -1,7 +1,8 @@
 """Entry point: execute every unit declared in the config directory.
 
-A unit is a ``type`` plus the arguments of a condition and an action, both of
-which name a module in :mod:`actionstrigger.script`.
+A unit is a ``type`` plus the arguments of a condition and of the actions, both
+of which name a module in :mod:`actions_trigger.script`.  ``actions`` is a list
+where every item is an action of its own; a single ``action`` is still accepted.
 """
 
 from __future__ import annotations
@@ -37,21 +38,61 @@ def get_unit_data(unit_id: str, actions_values: list[dict[str, Any]] | None = No
 
 
 def load_handler(name: str) -> ModuleType:
-    """Import ``actionstrigger.script.<name>``."""
+    """Import ``actions_trigger.script.<name>``."""
     return importlib.import_module(f'.script.{name}', __package__)
 
 
+def unit_actions(unit_id: str, args: dict) -> list[dict]:
+    """Actions of a unit: the ``actions`` list, or the legacy single ``action``."""
+    if 'actions' in args:
+        actions = args['actions']
+        if 'action' in args:
+            ActionsCmd.warning(f'#{unit_id} defines both action and actions, ignoring action')
+    elif 'action' in args:
+        actions = [args['action']]
+    else:
+        ActionsCmd.error(f'#{unit_id} defines neither action nor actions')
+        return []
+
+    if isinstance(actions, dict):  # tolerate a single mapping
+        ActionsCmd.warning(f'#{unit_id} actions should be a list, got a mapping')
+        actions = [actions]
+    elif actions is None:  # `actions:` without a value
+        actions = []
+    elif not isinstance(actions, list):
+        ActionsCmd.error(f'#{unit_id} actions must be a list')
+        return []
+
+    valid = []
+    for i, action in enumerate(actions):
+        if not isinstance(action, dict) or 'name' not in action:
+            ActionsCmd.error(f'#{unit_id} actions[{i}] must be a mapping with a name')
+            continue
+        valid.append(action)
+    return valid
+
+
 def simple_handler(unit_id: str, args: dict) -> None:
+    actions = unit_actions(unit_id, args)
+    if not actions:
+        logging.error(f'#{unit_id}: no action to run')
+        return
+
     origin_unit_data = get_unit_data(unit_id)
     unit_data = origin_unit_data.copy()
 
     cond_result: ResultData = load_handler(args['condition']['name']).handle(args['condition'], unit_data)
 
     if cond_result.ok:
-        act_result: ResultData = load_handler(args['action']['name']).handle(args['action'], unit_data)
-        if act_result.ok:
-            unit_data.update(act_result.unit_data)
-        ActionsCmd.notice(f'#{unit_id} executed')
+        executed = 0
+        for action in actions:
+            act_result: ResultData = load_handler(action['name']).handle(action, unit_data)
+            if act_result.ok:
+                unit_data.update(act_result.unit_data)
+                executed += 1
+            else:
+                ActionsCmd.warning(f'#{unit_id} action {action["name"]} failed')
+        ActionsCmd.notice(f'#{unit_id} executed {executed}/{len(actions)} action(s)')
     else:
         ActionsCmd.notice(f'#{unit_id} skipped')
 

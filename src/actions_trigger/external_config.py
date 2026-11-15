@@ -120,7 +120,7 @@ def sync_configs(repo: str, source: str, *, tag: str | None = None, branch: str 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog='actionstrigger-fetch-config',
+        prog='actions_trigger-ext-config',
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

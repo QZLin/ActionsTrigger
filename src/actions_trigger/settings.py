@@ -74,7 +74,7 @@ def config_dir() -> Path:
 
 
 def config_source() -> str:
-    """Where :mod:`actionstrigger.external_config` looks for configs: ``release`` or ``branch``."""
+    """Where :mod:`actions_trigger.external_config` looks for configs: ``release`` or ``branch``."""
     return (_first('ACTIONS_TRIGGER_CONFIG_SOURCE') or CONFIG_SOURCE_DEFAULT).lower()
 
 

@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-from actionstrigger import external_config
+from actions_trigger import external_config
 
 
 class IsYamlTestCase(unittest.TestCase):

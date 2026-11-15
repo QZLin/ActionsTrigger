@@ -1,6 +1,6 @@
 import unittest
 
-from actionstrigger.rest_api import AttrDict
+from actions_trigger.rest_api import AttrDict
 
 
 class AttrDictTestCase(unittest.TestCase):

@@ -19,7 +19,7 @@ jobs:
       run:
         shell: pwsh
     env:
-      # Read by actionstrigger.settings; GITHUB_REPOSITORY is provided by Actions.
+      # Read by actions_trigger.settings; GITHUB_REPOSITORY is provided by Actions.
       GITHUB_TOKEN: ${{ secrets.PERSONALTOKEN }}
 
     steps:
@@ -44,6 +44,6 @@ jobs:
       - name: Execute Script
         run: |
           #!/usr/bin/pwsh
-          uv run actionstrigger-ext-config "${{ github.repository }}" --source branch
-          uv run actionstrigger-ext-config "${{ github.repository }}" --source release
-          uv run actionstrigger
+          uv run actions_trigger-ext-config "${{ github.repository }}" --source branch
+          uv run actions_trigger-ext-config "${{ github.repository }}" --source release
+          uv run actions_trigger
