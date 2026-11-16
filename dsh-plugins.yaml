@@ -4,8 +4,12 @@ dsh-workspace-migrate:
     name: simple_new_tag
     repo: deepseek-ai/deepseek-harness
     branch: master
-  action:
-    name: workflow_dispatch
+  actions:
+  - name: workflow_dispatch
     repo: QZLin/dsh-workspace
+    branch: main
+    id: dsh-migrate.yml
+  - name: workflow_dispatch
+    repo: QZLin/dsh-silent-model-switch
     branch: main
     id: dsh-migrate.yml
