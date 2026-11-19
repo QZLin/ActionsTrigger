@@ -277,6 +277,27 @@ delete runs and *Variables: read/write* to keep the bookkeeping.
 what the workflow's `prune_event` dispatch input sets - dispatch the workflow with
 `prune_event: schedule` to test the pruning path on demand.
 
+### Cleaning historical runs manually
+
+The live pruner only knows about runs created after hash bookkeeping was
+introduced. Use `.github/workflows/cleanup.yml` to inspect older scheduled runs.
+It classifies successful runs from their unit annotations, never deletes runs
+that executed an action, and keeps the first and last run in each consecutive
+unchanged segment.
+
+The workflow defaults to a dry-run. Set `delete` to `true` only after reviewing
+the annotation output. An optional `before` ISO-8601 timestamp limits the scan
+to older runs. The same operation is available locally:
+
+```pwsh
+uv run actions_trigger-cleanup --workflow main.yml
+uv run actions_trigger-cleanup --workflow main.yml --before 2026-01-01T00:00:00Z --delete
+```
+
+Runs without complete unit annotations, failed runs, and runs interrupted by a
+change boundary are kept untouched because their historical state cannot be
+safely reconstructed.
+
 ## CI
 
 `.github/workflows/main.yml` runs the whole thing every 30 minutes (also on push
